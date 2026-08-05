@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TALLY — Factory Floor Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EDE9DE;
+    --panel:#FBF9F3;
+    --panel-2:#F3EFE4;
+    --ink:#221F1A;
+    --ink-soft:#5C574C;
+    --ink-faint:#8B8577;
+    --line:#D9D2C0;
+    --line-strong:#C4BCA5;
+    --indigo:#2E4374;
+    --indigo-dark:#1D2C50;
+    --indigo-tint:#E4E9F2;
+    --orange:#D9622B;
+    --orange-dark:#A6491D;
+    --orange-tint:#FBEADE;
+    --green:#4B7A57;
+    --green-tint:#E6EEE6;
+    --red:#B8432A;
+    --red-tint:#F6E4DD;
+    --radius:6px;
+    --shadow:0 1px 2px rgba(34,31,26,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.disp{ font-family:'Oswald',sans-serif; letter-spacing:0.02em; text-transform:uppercase; font-weight:600; margin:0; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  a{color:var(--indigo);}
+  button{ font-family:'Inter',sans-serif; cursor:pointer; }
+  input,select,textarea{ font-family:'Inter',sans-serif; }
+  ::selection{ background:var(--orange-tint); }
+
+  /* ---------- App shell ---------- */
+  #app{ min-height:100vh; }
+  .container{ max-width:1180px; margin:0 auto; padding:0 24px; }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border-radius:4px; border:1px solid var(--line-strong);
+    background:var(--panel); color:var(--ink); font-size:13.5px; font-weight:500;
+    padding:9px 16px; transition:transform .08s ease, background .15s ease;
+  }
+  .btn:hover{ background:var(--panel-2); }
+  .btn:active{ transform:scale(0.98); }
+  .btn-primary{ background:var(--indigo); border-color:var(--indigo); color:#fff; }
+  .btn-primary:hover{ background:var(--indigo-dark); }
+  .btn-accent{ background:var(--orange); border-color:var(--orange); color:#fff; }
+  .btn-accent:hover{ background:var(--orange-dark); }
+  .btn-ghost{ background:transparent; border-color:transparent; color:var(--ink-soft); }
+  .btn-ghost:hover{ background:var(--panel-2); }
+  .btn-danger{ background:transparent; border-color:var(--red); color:var(--red); }
+  .btn-danger:hover{ background:var(--red-tint); }
+  .btn-sm{ padding:6px 10px; font-size:12.5px; }
+  .btn-block{ width:100%; }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  /* ---------- Inputs ---------- */
+  .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .field label{ font-size:12px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; }
+  .field input[type=text], .field input[type=number], .field input[type=password], .field textarea, .field select{
+    border:1px solid var(--line-strong); border-radius:4px; padding:10px 12px; font-size:14.5px;
+    background:#fff; color:var(--ink); width:100%;
+  }
+  .field textarea{ resize:vertical; min-height:70px; }
+  .field input:focus, .field textarea:focus, .field select:focus{ outline:2px solid var(--indigo); outline-offset:1px; }
+  .field-row{ display:flex; gap:12px; }
+  .field-row .field{ flex:1; }
+  .help{ font-size:12px; color:var(--ink-faint); }
+  .err{ font-size:12.5px; color:var(--red); font-weight:500; }
+
+  /* ---------- Login screen ---------- */
+  .login-wrap{ min-height:100vh; display:flex; }
+  .login-brand{
+    flex:1 1 44%; background:var(--indigo); color:#EDE9DE; padding:64px 56px;
+    display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;
+  }
+  .login-brand .mark{ display:flex; align-items:center; gap:12px; }
+  .login-brand .mark svg{ width:34px; height:34px; }
+  .login-brand .mark span{ font-size:22px; letter-spacing:0.08em; color:#fff; }
+  .login-brand .tagline{ font-size:15px; color:#B9C4DE; max-width:360px; line-height:1.6; font-family:'Inter',sans-serif; text-transform:none; font-weight:400; letter-spacing:0; }
+  .rack{ position:absolute; right:-40px; bottom:-30px; opacity:0.9; }
+  .login-form-wrap{ flex:1 1 56%; display:flex; align-items:center; justify-content:center; padding:40px; background:var(--bg); }
+  .login-card{ width:100%; max-width:380px; }
+  .login-card h1{ font-size:26px; margin-bottom:6px; }
+  .login-card .sub{ font-size:13.5px; color:var(--ink-soft); text-transform:none; font-family:'Inter',sans-serif; font-weight:400; letter-spacing:0; margin-bottom:28px; }
+  .tab-toggle{ display:flex; gap:2px; background:var(--panel-2); border-radius:5px; padding:3px; margin-bottom:24px; }
+  .tab-toggle button{ flex:1; background:transparent; border:none; padding:8px; border-radius:4px; font-size:13px; font-weight:600; color:var(--ink-soft); }
+  .tab-toggle button.active{ background:#fff; color:var(--ink); box-shadow:var(--shadow); }
+
+  /* ---------- Header / nav ---------- */
+  .topbar{
+    background:var(--panel); border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+  }
+  .topbar-inner{ display:flex; align-items:center; justify-content:space-between; padding:14px 24px; gap:20px; }
+  .brand-mini{ display:flex; align-items:center; gap:10px; }
+  .brand-mini svg{ width:24px; height:24px; }
+  .brand-mini span{ font-size:17px; letter-spacing:0.06em; }
+  .nav-tabs{ display:flex; gap:4px; }
+  .nav-tabs button{
+    background:transparent; border:none; padding:8px 14px; border-radius:4px;
+    font-size:13.5px; font-weight:600; color:var(--ink-soft); font-family:'Inter',sans-serif;
+  }
+  .nav-tabs button.active{ background:var(--indigo-tint); color:var(--indigo-dark); }
+  .who{ display:flex; align-items:center; gap:12px; }
+  .who .name{ font-size:13.5px; font-weight:600; }
+  .who .role{ font-size:11px; color:var(--ink-faint); }
+
+  /* ---------- Page ---------- */
+  .page{ padding:32px 0 64px; }
+  .page-head{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:24px; gap:16px; flex-wrap:wrap; }
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--orange-dark); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+  .page-title{ font-size:28px; }
+  .page-desc{ font-size:13.5px; color:var(--ink-soft); margin-top:6px; font-family:'Inter',sans-serif; text-transform:none; font-weight:400; letter-spacing:0; }
+
+  /* ---------- Panels ---------- */
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:20px; }
+  .panel-title{ font-size:14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+  .grid-2{ display:grid; grid-template-columns:1.3fr 1fr; gap:20px; align-items:start; }
+  @media (max-width:900px){ .grid-2{ grid-template-columns:1fr; } }
+
+  /* ---------- Stat cards ---------- */
+  .stat-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  @media (max-width:700px){ .stat-row{ grid-template-columns:repeat(2,1fr); } }
+  .stat-card{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; }
+  .stat-card .num{ font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:600; }
+  .stat-card .lbl{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; }
+  .stat-card.up .num{ color:var(--green); }
+  .stat-card.down .num{ color:var(--red); }
+  .stat-card.accent .num{ color:var(--orange-dark); }
+
+  /* ---------- Sign-in sheet ---------- */
+  .sheet-row{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13px; }
+  .sheet-row:last-child{ border-bottom:none; }
+  .dot{ width:7px; height:7px; border-radius:50%; background:var(--indigo); flex:none; }
+  .sheet-row .who-name{ font-weight:600; flex:1; }
+  .sheet-row .who-time{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); }
+  .empty-note{ font-size:13px; color:var(--ink-faint); padding:10px 0; }
+
+  /* ---------- Activity feed ---------- */
+  .feed-row{ display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .feed-row:last-child{ border-bottom:none; }
+  .feed-icon{ width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:none; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; }
+  .feed-icon.add{ background:var(--green-tint); color:var(--green); }
+  .feed-icon.rem{ background:var(--red-tint); color:var(--red); }
+  .feed-icon.new{ background:var(--indigo-tint); color:var(--indigo); }
+  .feed-icon.del{ background:var(--panel-2); color:var(--ink-faint); }
+  .feed-text{ font-size:13px; line-height:1.5; }
+  .feed-text b{ font-weight:600; }
+  .feed-meta{ font-size:11.5px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; margin-top:2px; }
+
+  /* ---------- Inventory toolbar ---------- */
+  .inv-toolbar{ display:flex; gap:12px; align-items:center; margin-bottom:20px; flex-wrap:wrap; }
+  .search-wrap{ position:relative; flex:1; min-width:220px; }
+  .search-wrap input{ width:100%; padding:10px 12px 10px 34px; border:1px solid var(--line-strong); border-radius:4px; font-size:14px; background:#fff; }
+  .search-wrap svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--ink-faint); }
+  .toggle-chip{ display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:var(--ink-soft); border:1px solid var(--line-strong); border-radius:20px; padding:7px 14px; background:#fff; }
+  .toggle-chip input{ accent-color:var(--orange); }
+
+  /* ---------- Tag card grid ---------- */
+  .tag-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px; }
+  .tag-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    padding:16px 14px 14px 14px; position:relative; display:flex; flex-direction:column; gap:10px;
+    border-top:2px dashed var(--line-strong);
+  }
+  .tag-hole{ position:absolute; top:-8px; left:16px; width:16px; height:16px; border-radius:50%; background:var(--bg); border:2px solid var(--line-strong); }
+  .tag-photo{ width:100%; aspect-ratio:4/3; border-radius:4px; background:var(--panel-2); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .tag-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .tag-photo .ph-icon{ color:var(--ink-faint); }
+  .tag-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .tag-name{ font-size:15px; font-weight:600; line-height:1.3; font-family:'Inter',sans-serif; text-transform:none; letter-spacing:0; }
+  .swatch-row{ display:flex; align-items:center; gap:8px; }
+  .swatch{ width:16px; height:16px; border-radius:3px; border:1px solid rgba(0,0,0,0.15); flex:none; }
+  .code-txt{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); }
+  .tag-desc{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .qty-row{ display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
+  .qty-badge{ font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; }
+  .low-flag{ font-size:10.5px; font-weight:700; background:var(--orange-tint); color:var(--orange-dark); padding:3px 7px; border-radius:3px; text-transform:uppercase; letter-spacing:0.04em; }
+  .tag-actions{ display:flex; gap:6px; margin-top:4px; }
+  .tag-actions .btn{ flex:1; padding:7px; font-size:12px; }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(24,21,16,0.5); display:flex; align-items:center; justify-content:center; padding:20px; z-index:100; }
+  .modal{ background:var(--panel); border-radius:8px; width:100%; max-width:520px; max-height:88vh; overflow-y:auto; padding:26px; }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .modal-head h2{ font-size:19px; }
+  .close-x{ background:transparent; border:none; font-size:20px; color:var(--ink-faint); line-height:1; padding:4px; }
+  .photo-input-wrap{ display:flex; align-items:center; gap:14px; }
+  .photo-preview{ width:74px; height:74px; border-radius:6px; background:var(--panel-2); overflow:hidden; flex:none; display:flex; align-items:center; justify-content:center; border:1px solid var(--line); }
+  .photo-preview img{ width:100%; height:100%; object-fit:cover; }
+  .color-input-wrap{ display:flex; gap:10px; align-items:center; }
+  .color-input-wrap input[type=color]{ width:44px; height:38px; border:1px solid var(--line-strong); border-radius:4px; padding:2px; background:#fff; }
+
+  /* ---------- Toast ---------- */
+  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:11px 20px; border-radius:6px; font-size:13.5px; z-index:200; box-shadow:0 4px 14px rgba(0,0,0,0.2); }
+  .toast.error{ background:var(--red); }
+  .toast.success{ background:var(--green); }
+
+  /* ---------- Detail expand ---------- */
+  .detail-photo{ width:100%; max-height:220px; object-fit:cover; border-radius:6px; margin-bottom:14px; background:var(--panel-2); }
+  .detail-desc{ font-size:14px; line-height:1.65; color:var(--ink); white-space:pre-wrap; }
+  .kv-row{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .kv-row:last-child{ border-bottom:none; }
+  .kv-row .k{ color:var(--ink-soft); }
+  .kv-row .v{ font-weight:600; font-family:'IBM Plex Mono',monospace; }
+  .stock-adjust{ display:flex; gap:8px; align-items:center; margin-top:16px; }
+  .stock-adjust input{ width:70px; text-align:center; border:1px solid var(--line-strong); border-radius:4px; padding:9px; font-size:14px; }
+
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-faint); }
+  .empty-state svg{ margin-bottom:14px; opacity:0.5; }
+  .empty-state p{ font-size:14px; }
+
+  /* ================= REPORT TABLE ================= */
+
+.report-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+    background:#fff;
+}
+
+.report-table th{
+    background:#2E4374;
+    color:#fff;
+    padding:12px;
+    text-align:left;
+    font-size:14px;
+}
+
+.report-table td{
+    padding:12px;
+    border-bottom:1px solid #ddd;
+    font-size:14px;
+}
+
+.report-table tr:nth-child(even){
+    background:#f8f8f8;
+}
+
+.report-table tr:hover{
+    background:#eef4ff;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================= STORAGE HELPERS ============================= */
+const SHARED = true;
+
+function storeGet(key, fallback){
+  return new Promise(resolve => {
+    if(window.storage && typeof window.storage.get === 'function'){
+      window.storage.get(key, SHARED).then(r => {
+        if(!r) return resolve(fallback);
+        try{ resolve(JSON.parse(r.value)); }
+        catch(err){ resolve(fallback); }
+      }).catch(() => resolve(fallback));
+    }else{
+      try{
+        const raw = localStorage.getItem('tally_' + key);
+        resolve(raw ? JSON.parse(raw) : fallback);
+      }catch(err){ resolve(fallback); }
+    }
+  });
+}
+function storeSet(key, value){
+  return new Promise(resolve => {
+    const finish = ok => resolve(ok);
+    if(window.storage && typeof window.storage.set === 'function'){
+      window.storage.set(key, JSON.stringify(value), SHARED)
+        .then(() => finish(true))
+        .catch(e => { console.error('storage set failed', e); finish(false); });
+    }else{
+      try{
+        localStorage.setItem('tally_' + key, JSON.stringify(value));
+        finish(true);
+      }catch(e){ console.error('storage set failed', e); finish(false); }
+    }
+  });
+}
+
+/* ============================= ADMIN CONFIG ============================= */
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = '2871';
+
+/* ============================= STATE ============================= */
+const State = {
+  loading: true,
+  currentUser: null,
+  currentRole: null,   // 'admin' | 'user'
+  view: 'login',       // login | dashboard | inventory
+  authMode: 'signin',  // signin (admin) | user
+  showManageUsers: false,
+  users: [],
+  loginLog: [],
+  items: [],
+  activityLog: [],
+  search: '',
+  lowOnly: false,
+  pendingPhoto: '',     // dataURL for form-in-progress
+  editingItemId: null,  // when non-null, item detail/edit modal open
+  showAddModal: false,
+  toast: null
+};
+
+function uid(){
+  return 'id-' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+}
+function nowISO(){ return new Date().toISOString(); }
+function fmtTime(iso){
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function isToday(iso){
+  const d = new Date(iso);
+  const t = new Date();
+  return d.toDateString() === t.toDateString();
+}
+function showToast(msg, type){
+  State.toast = { msg, type: type || 'default' };
+  render();
+  setTimeout(()=>{ State.toast = null; render(); }, 2600);
+}
+function esc(str){
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
+
+/* ============================= LOAD ============================= */
+async function loadAll(){
+let [users, loginLog, items, activityLog] = await Promise.all([
+    storeGet('users', []),
+    storeGet('login-log', []),
+    storeGet('inventory-items', []),
+    storeGet('activity-log', [])
+  ]);
+// If no admin exists yet, bootstrap a default admin or promote the first user
+  const hasAdmin = users.some(u => u.role === 'admin');
+  if(!hasAdmin){
+    if(users.length === 0){
+      // Fresh install: create default admin account
+      users = [{ name: 'admin', pin: '2871', role: 'admin' }];
+      await storeSet('users', users);
+      State.users = users;
+    }else{
+      // Existing users without roles: promote the first user to admin
+      users = users.map((u, i) => i === 0 ? {...u, role: 'admin'} : {...u, role: 'user'});
+      await storeSet('users', users);
+      State.users = users;
+    }
+  }
+  State.users = users;
+  State.loginLog = loginLog;
+  State.items = items;
+  State.activityLog = activityLog;
+  State.loading = false;
+  render();
+}
+
+/* ============================= AUTH ============================= */
+async function handleAuthSubmit(e){
+  e.preventDefault();
+  const form = e.target;
+  const name = form.name.value.trim();
+  const pin = form.pin.value.trim();
+  const errEl = document.getElementById('auth-err');
+  errEl.textContent = '';
+
+  if(!name || !pin){
+    errEl.textContent = 'Enter a name and a PIN.';
+    return;
+  }
+
+  // Admin sign-in (fixed credentials)
+  if(name.toLowerCase() === ADMIN_USERNAME.toLowerCase() && pin === ADMIN_PASSWORD){
+    await completeLogin(ADMIN_USERNAME, 'admin');
+    return;
+  }
+
+  // Regular user sign-in
+  const user = State.users.find(u =>
+    u.name.toLowerCase() === name.toLowerCase() &&
+    u.name.toLowerCase() !== ADMIN_USERNAME.toLowerCase()
+  );
+  if(!user || user.pin !== pin){
+    errEl.textContent = 'Name and PIN do not match our records.';
+    return;
+  }
+  await completeLogin(user.name, user.role || 'user');
+}
+
+async function completeLogin(name, role){
+  State.currentUser = name;
+  State.currentRole = role;
+  const entry = { name, role, timestamp: nowISO() };
+  State.loginLog = [entry, ...State.loginLog].slice(0, 300);
+  await storeSet('login-log', State.loginLog);
+  State.view = 'dashboard';
+  render();
+}
+
+function handleLogout(){
+  State.currentUser = null;
+  State.currentRole = null;
+  State.showManageUsers = false;
+  State.view = 'login';
+  render();
+}
+
+/* ============================= INVENTORY ACTIONS ============================= */
+async function persistItems(){ await storeSet('inventory-items', State.items); }
+async function persistActivity(){ await storeSet('activity-log', State.activityLog); }
+
+function pushActivity(entry){
+  State.activityLog = [{...entry, id: uid(), timestamp: nowISO(), user: State.currentUser}, ...State.activityLog].slice(0, 400);
+}
+
+async function handleAddItemSubmit(e){
+  e.preventDefault();
+  const form = e.target;
+  const name = form.iname.value.trim();
+  const colorCode = form.icode.value.trim();
+  const colorHex = form.ihex.value;
+  const qty = parseInt(form.iqty.value, 10);
+  const desc = form.idesc.value.trim();
+  const errEl = document.getElementById('item-err');
+  errEl.textContent = '';
+
+  if(!name){ errEl.textContent = 'Give this garment a name.'; return; }
+  if(isNaN(qty) || qty < 0){ errEl.textContent = 'Enter a valid starting quantity.'; return; }
+
+  const item = {
+    id: uid(),
+    name, colorCode, colorHex,
+    quantity: qty,
+    description: desc,
+    photo: State.pendingPhoto || '',
+    createdAt: nowISO(),
+    updatedAt: nowISO(),
+    createdBy: State.currentUser
+  };
+  State.items = [item, ...State.items];
+  pushActivity({ type:'created', itemId: item.id, itemName: item.name, colorCode: item.colorCode, qty });
+  await Promise.all([persistItems(), persistActivity()]);
+  State.showAddModal = false;
+  State.pendingPhoto = '';
+  showToast('Added ' + name + ' to inventory', 'success');
+}
+
+async function adjustStock(itemId, delta){
+  const item = State.items.find(i => i.id === itemId);
+  if(!item) return;
+  const newQty = item.quantity + delta;
+  if(newQty < 0){ showToast('Not enough stock to remove that many', 'error'); return; }
+  item.quantity = newQty;
+  item.updatedAt = nowISO();
+  pushActivity({ type: delta >= 0 ? 'added' : 'removed', itemId: item.id, itemName: item.name, colorCode: item.colorCode, qty: Math.abs(delta) });
+  await Promise.all([persistItems(), persistActivity()]);
+  render();
+}
+
+async function deleteItem(itemId){
+  const item = State.items.find(i => i.id === itemId);
+  if(!item) return;
+  if(!confirm('Remove "' + item.name + '" from the ledger for good?')) return;
+  State.items = State.items.filter(i => i.id !== itemId);
+  pushActivity({ type:'deleted', itemId: item.id, itemName: item.name, colorCode: item.colorCode, qty: item.quantity });
+  await Promise.all([persistItems(), persistActivity()]);
+  State.editingItemId = null;
+  showToast('Removed ' + item.name, 'default');
+}
+
+/* ============================= PHOTO HANDLING ============================= */
+function handlePhotoSelect(input, target){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const img = new Image();
+    img.onload = function(){
+      const maxW = 720;
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.68);
+      if(target === 'add'){ State.pendingPhoto = dataUrl; }
+      renderPhotoPreview(target, dataUrl);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function renderPhotoPreview(target, dataUrl){
+  const el = document.getElementById(target + '-photo-preview');
+  if(el){ el.innerHTML = '<img src="' + dataUrl + '" alt="">'; }
+}
+
+/* ============================= COMPUTED ============================= */
+function todaysLogins(){
+  return State.loginLog.filter(l => isToday(l.timestamp));
+}
+function todaysActivity(){
+  return State.activityLog.filter(a => isToday(a.timestamp));
+}
+function todaysStats(){
+  const acts = todaysActivity();
+  let added = 0, removed = 0, created = 0;
+  acts.forEach(a=>{
+    if(a.type === 'added') added += a.qty;
+    else if(a.type === 'removed') removed += a.qty;
+    else if(a.type === 'created') created += 1;
+  });
+  return { added, removed, created, net: added - removed };
+}
+function filteredItems(){
+  let list = State.items;
+  const q = State.search.trim().toLowerCase();
+  if(q){
+    list = list.filter(i =>
+      i.name.toLowerCase().includes(q) ||
+      (i.colorCode || '').toLowerCase().includes(q) ||
+      (i.description || '').toLowerCase().includes(q)
+    );
+  }
+  if(State.lowOnly){ list = list.filter(i => i.quantity < 5); }
+  return list;
+}
+
+/* ============================= ICONS (inline SVG) ============================= */
+const ICONS = {
+  tag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12.6 2.6H4a1.4 1.4 0 0 0-1.4 1.4v8.6c0 .37.15.73.41 1l9 9a1.4 1.4 0 0 0 2 0l8.58-8.58a1.4 1.4 0 0 0 0-2l-9-9a1.4 1.4 0 0 0-.99-.42Z"/><circle cx="7.8" cy="7.8" r="1.6"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="30" height="30"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5-9 9"/></svg>',
+  box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="46" height="46"><path d="M21 8l-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>'
+};
+
+/* ============================= RENDERERS ============================= */
+function render(){
+  const app = document.getElementById('app');
+  if(State.loading){
+    app.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-family:IBM Plex Mono,monospace;font-size:13px;">loading ledger...</div>';
+    return;
+  }
+  if(!State.currentUser || State.view === 'login'){
+    app.innerHTML = renderLogin();
+    attachLoginEvents();
+    return;
+  }
+let body = '';
+  if(State.view === 'dashboard')
+    body = renderDashboard();
+
+else if(State.view === 'inventory')
+    body = renderInventory();
+
+else if(State.view === 'reports')
+    body = renderReports();
+
+else if(State.view === 'manage')
+    body = State.currentRole === 'admin'
+        ? renderManageUsers()
+        : renderDashboard();
+  app.innerHTML = renderTopbar() + '<div class="page"><div class="container">' + body + '</div></div>'
+    + (State.showAddModal ? renderAddModal() : '')
+    + (State.editingItemId ? renderDetailModal() : '')
+    + (State.toast ? '<div class="toast ' + esc(State.toast.type) + '">' + esc(State.toast.msg) + '</div>' : '');
+
+  attachGlobalEvents();
+}
+
+function renderLogin(){
+  return `
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div>
+        <div class="mark">
+          ${ICONS.tag.replace('currentColor', '#EDE9DE')}
+          <span class="disp">TALLY</span>
+        </div>
+      </div>
+      <div>
+        <h1 class="disp" style="font-size:34px;color:#fff;line-height:1.15;margin-bottom:14px;">Factory floor<br>ledger</h1>
+        <p class="tagline">Track every garment on the floor — what's in stock, what colour, what moved, and who was here to move it.</p>
+      </div>
+      <div style="font-size:11px;color:#8FA0C4;font-family:'IBM Plex Mono',monospace;letter-spacing:0.05em;">SIGN IN TO CONTINUE</div>
+    </div>
+    <div class="login-form-wrap">
+      <div class="login-card">
+        <h1>Sign in</h1>
+        <p class="sub">Enter your name and PIN to open the ledger. Accounts are created by the manager.</p>
+        <form id="auth-form">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" name="name" autocomplete="username" placeholder="e.g. Sunita Rai">
+          </div>
+          <div class="field">
+            <label>PIN</label>
+            <input type="password" name="pin" autocomplete="current-password" placeholder="Your PIN">
+          </div>
+          <div id="auth-err" class="err" style="margin-bottom:12px;"></div>
+          <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+        </form>
+        <p class="help" style="margin-top:16px;text-align:center;">Admins sign in with their manager credentials.</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function attachLoginEvents(){
+  const form = document.getElementById('auth-form');
+  if(form) form.addEventListener('submit', handleAuthSubmit);
+}
+
+function renderTopbar(){
+  return `
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand-mini">
+        ${ICONS.tag.replace('currentColor','#2E4374')}
+        <span class="disp">TALLY</span>
+      </div>
+<div class="nav-tabs">
+    <button data-nav="dashboard" class="${State.view==='dashboard'?'active':''}">
+        Home
+    </button>
+
+    <button data-nav="inventory" class="${State.view==='inventory'?'active':''}">
+        Inventory
+    </button>
+
+    <button data-nav="reports" class="${State.view==='reports'?'active':''}">
+        Reports
+    </button>
+
+    ${State.currentRole === 'admin'
+      ? '<button data-nav="manage" class="' +
+        (State.view==='manage'?'active':'') +
+        '">Manage Users</button>'
+      : ''}
+</div>
+      <div class="who">
+        <div style="text-align:right;">
+          <div class="name">${esc(State.currentUser)}</div>
+          <div class="role">${esc(State.currentRole === 'admin' ? 'manager' : 'on the floor')}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-logout="1">Log out</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderDashboard(){
+  const stats = todaysStats();
+  const logins = todaysLogins();
+  const acts = todaysActivity();
+  const totalStock = State.items.reduce((s,i)=>s+i.quantity,0);
+
+  const loginRows = logins.length ? logins.slice(0,10).map(l => `
+    <div class="sheet-row">
+      <span class="dot"></span>
+      <span class="who-name">${esc(l.name)}</span>
+      <span class="who-time">${fmtTime(l.timestamp)}</span>
+    </div>`).join('') : '<div class="empty-note">No one has signed in yet today.</div>';
+
+  const activityRows = acts.length ? acts.slice(0,14).map(a => {
+    let cls = 'new', sym = '+', text = '';
+    if(a.type === 'created'){ cls='new'; sym='N'; text = `<b>${esc(a.user)}</b> added a new style — <b>${esc(a.itemName)}</b>${a.colorCode ? ' ('+esc(a.colorCode)+')' : ''}`; }
+    else if(a.type === 'added'){ cls='add'; sym='+'; text = `<b>${esc(a.user)}</b> added <b>${a.qty}</b> to <b>${esc(a.itemName)}</b>`; }
+    else if(a.type === 'removed'){ cls='rem'; sym='−'; text = `<b>${esc(a.user)}</b> removed <b>${a.qty}</b> from <b>${esc(a.itemName)}</b>`; }
+    else if(a.type === 'deleted'){ cls='del'; sym='×'; text = `<b>${esc(a.user)}</b> deleted <b>${esc(a.itemName)}</b>`; }
+    return `<div class="feed-row">
+      <div class="feed-icon ${cls}">${sym}</div>
+      <div>
+        <div class="feed-text">${text}</div>
+        <div class="feed-meta">${fmtTime(a.timestamp)}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-note">No stock movement yet today. Head to Inventory to log something.</div>';
+
+  return `
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">Floor overview — ${new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'})}</div>
+      <h1 class="page-title">Today's progress</h1>
+    </div>
+    <button class="btn btn-accent" data-nav="inventory">${ICONS.tag.replace('currentColor','#fff').replace('width="24" height="24"','width="16" height="16"')} Go to inventory</button>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card up"><div class="num mono">+${stats.added}</div><div class="lbl">Added today</div></div>
+    <div class="stat-card down"><div class="num mono">−${stats.removed}</div><div class="lbl">Removed today</div></div>
+    <div class="stat-card accent"><div class="num mono">${stats.created}</div><div class="lbl">New styles today</div></div>
+    <div class="stat-card"><div class="num mono">${totalStock}</div><div class="lbl">Total pieces in stock</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title"><span>Today's activity</span></div>
+      ${activityRows}
+    </div>
+    <div class="panel">
+      <div class="panel-title"><span>Signed in today</span></div>
+      ${loginRows}
+    </div>
+  </div>`;
+}
+
+function renderInventory(){
+  const items = filteredItems();
+  const grid = items.length ? `<div class="tag-grid">${items.map(renderTagCard).join('')}</div>` : `
+    <div class="empty-state">
+      ${ICONS.box}
+      <p>${State.items.length ? 'Nothing matches that search.' : 'No garments logged yet. Add the first one.'}</p>
+    </div>`;
+
+  return `
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">${State.items.length} styles on record</div>
+      <h1 class="page-title">Inventory</h1>
+      <p class="page-desc">Every garment currently tracked, with colour code and quantity on hand.</p>
+    </div>
+    <button class="btn btn-accent" data-open-add="1">+ Add garment</button>
+  </div>
+
+  <div class="inv-toolbar">
+    <div class="search-wrap">
+      ${ICONS.search}
+      <input type="text" id="search-input" placeholder="Search by name, colour code, or description" value="${esc(State.search)}">
+    </div>
+    <label class="toggle-chip">
+      <input type="checkbox" id="low-toggle" ${State.lowOnly ? 'checked' : ''}>
+      Low stock only
+    </label>
+  </div>
+
+  ${grid}`;
+}
+
+function renderTagCard(item){
+  const low = item.quantity < 5;
+  const photo = item.photo
+    ? `<img src="${item.photo}" alt="${esc(item.name)}">`
+    : `<span class="ph-icon">${ICONS.photo}</span>`;
+  return `
+  <div class="tag-card" data-open-item="${item.id}">
+    <div class="tag-hole"></div>
+    <div class="tag-photo">${photo}</div>
+    <div class="tag-top">
+      <div class="tag-name">${esc(item.name)}</div>
+    </div>
+    <div class="swatch-row">
+      <span class="swatch" style="background:${item.colorHex || '#ccc'}"></span>
+      <span class="code-txt">${esc(item.colorCode || '—')}</span>
+    </div>
+    ${item.description ? `<div class="tag-desc">${esc(item.description)}</div>` : ''}
+    <div class="qty-row">
+      <span class="qty-badge">${item.quantity}<span style="font-size:11px;color:var(--ink-faint);font-weight:400;"> pcs</span></span>
+      ${low ? '<span class="low-flag">Low</span>' : ''}
+    </div>
+    <div class="tag-actions">
+      <button class="btn btn-sm" data-stock-minus="${item.id}">− Stock</button>
+      <button class="btn btn-sm" data-stock-plus="${item.id}">+ Stock</button>
+    </div>
+  </div>`;
+}
+
+function renderManageUsers(){
+  const logins = State.loginLog.slice(0, 30);
+  const userRows = State.users.map(u => {
+    const isAdmin = u.role === 'admin' || u.name.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+    return `
+      <div class="sheet-row" style="padding:10px 0;">
+        <span class="dot" style="background:${isAdmin ? 'var(--orange)' : 'var(--indigo)'}"></span>
+        <span class="who-name">${esc(u.name)}</span>
+        <span class="who-time" style="text-transform:uppercase;font-size:11px;">${isAdmin ? 'manager' : 'staff'}</span>
+        ${isAdmin ? '' : '<button class="btn btn-danger btn-sm" data-remove-user="' + esc(u.name) + '">Remove</button>'}
+      </div>`;
+  }).join('') || '<div class="empty-note">No users yet. Add the first one below.</div>';
+
+  const loginRows = logins.length ? logins.map(l => `
+    <div class="sheet-row">
+      <span class="dot" style="background:${l.role === 'admin' ? 'var(--orange)' : 'var(--indigo)'}"></span>
+      <span class="who-name">${esc(l.name)} <span style="color:var(--ink-faint);font-size:11px;">· ${esc(l.role || 'user')}</span></span>
+      <span class="who-time">${fmtTime(l.timestamp)}</span>
+    </div>`).join('') : '<div class="empty-note">No one has signed in yet.</div>';
+
+  return `
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">Manager console</div>
+      <h1 class="page-title">Manage users</h1>
+      <p class="page-desc">Only the manager can create or remove staff accounts.</p>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title"><span>Sign-in log</span></div>
+      ${loginRows}
+    </div>
+    <div>
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-title"><span>Add a new user</span></div>
+        <form id="add-user-form">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" name="newUserName" placeholder="e.g. Anita Gurung">
+          </div>
+          <div class="field">
+            <label>PIN</label>
+            <input type="password" name="newUserPin" placeholder="At least 4 characters">
+          </div>
+          <div id="add-user-err" class="err" style="margin-bottom:10px;"></div>
+          <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        </form>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><span>Staff accounts</span></div>
+        ${userRows}
+      </div>
+    </div>
+  </div>`;
+}
+
+function handleAddUser(e){
+  e.preventDefault();
+  const form = e.target;
+  const name = form.newUserName.value.trim();
+  const pin = form.newUserPin.value.trim();
+  const errEl = document.getElementById('add-user-err');
+  errEl.textContent = '';
+
+  if(!name){ errEl.textContent = 'Enter the new user\'s name.'; return; }
+  if(name.toLowerCase() === ADMIN_USERNAME.toLowerCase()){ errEl.textContent = 'That is the reserved admin name.'; return; }
+  if(pin.length < 4){ errEl.textContent = 'PIN should be at least 4 characters.'; return; }
+  const exists = State.users.some(u => u.name.toLowerCase() === name.toLowerCase());
+  if(exists){ errEl.textContent = 'A user with that name already exists.'; return; }
+
+  const newUser = { name, pin, role: 'user' };
+  State.users = [...State.users, newUser];
+  storeSet('users', State.users).then(ok => {
+    if(!ok){ errEl.textContent = 'Could not save account. Try again.'; return; }
+    showToast('Created account for ' + name, 'success');
+  });
+}
+
+async function handleRemoveUser(name){
+  const target = State.users.find(u => u.name === name);
+  if(!target) return;
+  if((target.role === 'admin') || name.toLowerCase() === ADMIN_USERNAME.toLowerCase()){
+    showToast('The manager account cannot be removed.', 'error');
+    return;
+  }
+  if(!confirm('Remove the account for "' + name + '"? They will no longer be able to sign in.')) return;
+  State.users = State.users.filter(u => u.name !== name);
+  await storeSet('users', State.users);
+  showToast('Removed ' + name, 'default');
+}
+
+function renderAddModal(){
+  return `
+  <div class="modal-backdrop" data-close-add="1">
+    <div class="modal" data-stop="1">
+      <div class="modal-head">
+        <h2>Add garment</h2>
+        <button class="close-x" data-close-add="1">&times;</button>
+      </div>
+      <form id="add-item-form">
+        <div class="field">
+          <label>Photo</label>
+          <div class="photo-input-wrap">
+            <div class="photo-preview" id="add-photo-preview">${ICONS.photo}</div>
+            <input type="file" accept="image/*" id="add-photo-input">
+          </div>
+        </div>
+        <div class="field">
+          <label>Garment name</label>
+          <input type="text" name="iname" placeholder="e.g. Men's Oxford Shirt">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Colour code</label>
+            <input type="text" name="icode" placeholder="e.g. NV-014">
+          </div>
+          <div class="field">
+            <label>Colour</label>
+            <div class="color-input-wrap">
+              <input type="color" name="ihex" value="#2E4374">
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Starting quantity</label>
+          <input type="number" name="iqty" min="0" value="0">
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <textarea name="idesc" placeholder="Fabric, fit, size range, anything that helps identify it"></textarea>
+        </div>
+        <div id="item-err" class="err" style="margin-bottom:10px;"></div>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="btn btn-ghost" data-close-add="1" style="flex:1;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex:2;">Add to ledger</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function renderDetailModal(){
+  const item = State.items.find(i => i.id === State.editingItemId);
+  if(!item) return '';
+  const photo = item.photo ? `<img class="detail-photo" src="${item.photo}" alt="${esc(item.name)}">` : '';
+  return `
+  <div class="modal-backdrop" data-close-detail="1">
+    <div class="modal" data-stop="1">
+      <div class="modal-head">
+        <h2>${esc(item.name)}</h2>
+        <button class="close-x" data-close-detail="1">&times;</button>
+      </div>
+      ${photo}
+      <div class="swatch-row" style="margin-bottom:12px;">
+        <span class="swatch" style="background:${item.colorHex || '#ccc'}"></span>
+        <span class="code-txt">${esc(item.colorCode || '—')}</span>
+      </div>
+      ${item.description ? `<div class="detail-desc" style="margin-bottom:14px;">${esc(item.description)}</div>` : ''}
+      <div class="kv-row"><span class="k">In stock</span><span class="v">${item.quantity} pcs</span></div>
+      <div class="kv-row"><span class="k">Added</span><span class="v" style="font-weight:500;">${fmtTime(item.createdAt)}</span></div>
+      <div class="kv-row"><span class="k">Last updated</span><span class="v" style="font-weight:500;">${fmtTime(item.updatedAt)}</span></div>
+      <div class="stock-adjust">
+        <button class="btn btn-sm" data-stock-minus="${item.id}">−</button>
+        <input type="number" id="detail-adjust-amt" value="1" min="1">
+        <button class="btn btn-sm" data-stock-plus="${item.id}">+</button>
+        <span class="help">pieces</span>
+      </div>
+      <div style="margin-top:20px;display:flex;justify-content:flex-end;">
+        <button class="btn btn-danger btn-sm" data-delete-item="${item.id}">Delete garment</button>
+      </div>
+    </div>
+  </div>`;
+}
+/* ============================= REPORTS PAGE ============================= */
+function renderReports(){
+
+    const totalAdded = State.activityLog
+        .filter(a => a.type === "added")
+        .reduce((t,a)=>t+a.qty,0);
+
+    const totalRemoved = State.activityLog
+        .filter(a => a.type === "removed")
+        .reduce((t,a)=>t+a.qty,0);
+
+    const totalCreated = State.activityLog
+        .filter(a => a.type === "created")
+        .length;
+
+    let rows = "";
+
+    if(State.activityLog.length===0){
+
+        rows=`
+        <tr>
+            <td colspan="5" style="text-align:center;padding:20px;">
+                No Records Found
+            </td>
+        </tr>
+        `;
+
+    }else{
+
+        rows = State.activityLog.map((a,index)=>`
+
+<tr>
+
+<td>${fmtTime(a.timestamp)}</td>
+
+<td>${a.user}</td>
+
+<td>${a.type}</td>
+
+<td>${a.itemName}</td>
+
+<td>${a.qty}</td>
+
+<td>
+
+<button
+class="btn btn-danger btn-sm"
+data-delete-report="${index}">
+Delete
+</button>
+
+</td>
+
+</tr>
+
+`).join("");
+
+    }
+
+    return `
+
+<div class="page-head">
+
+<div>
+
+<div class="eyebrow">Factory Reports</div>
+
+<h1 class="page-title">Inventory Reports</h1>
+
+<p class="page-desc">
+Every movement inside your factory.
+</p>
+
+</div>
+
+</div>
+
+
+<div class="stat-row">
+
+<div class="stat-card up">
+
+<div class="num">${totalAdded}</div>
+
+<div class="lbl">Items Added</div>
+
+</div>
+
+
+<div class="stat-card down">
+
+<div class="num">${totalRemoved}</div>
+
+<div class="lbl">Items Removed</div>
+
+</div>
+
+
+<div class="stat-card accent">
+
+<div class="num">${totalCreated}</div>
+
+<div class="lbl">Products Created</div>
+
+</div>
+
+
+<div class="stat-card">
+
+<div class="num">${State.items.length}</div>
+
+<div class="lbl">Total Products</div>
+
+</div>
+
+</div>
+
+
+<div class="panel">
+
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
+
+<input
+type="text"
+id="reportSearch"
+placeholder="Search Employee or Garment..."
+style="flex:1;padding:10px;border:1px solid #ccc;border-radius:5px;">
+
+<button class="btn btn-primary" id="printReport">
+Print
+</button>
+
+<button class="btn btn-accent" id="exportCSV">
+Excel
+</button>
+
+<button class="btn" id="exportPDF">
+PDF
+</button>
+
+</div>
+
+<table class="report-table">
+
+<thead>
+
+<tr>
+
+<th>Date</th>
+
+<th>Employee</th>
+
+<th>Action</th>
+
+<th>Garment</th>
+
+<th>Quantity</th>
+
+<th>Delete</th>
+
+</tr>
+
+</thead>
+
+<tbody id="reportBody">
+
+${rows}
+
+</tbody>
+
+</table>
+
+</div>
+
+`;
+
+}
+async function deleteReport(index){
+
+if(!confirm("Delete this report?")) return;
+
+State.activityLog.splice(index,1);
+
+await persistActivity();
+
+render();
+
+showToast("Report deleted","success");
+
+}
+/* ============================= EVENT WIRING ============================= */
+function attachGlobalEvents(){
+  document.querySelectorAll('[data-nav]').forEach(el=>{
+    el.addEventListener('click', ()=>{ State.view = el.getAttribute('data-nav'); render(); });
+  });
+const logoutBtn = document.querySelector('[data-logout]');
+  if(logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+
+  const addUserForm = document.getElementById('add-user-form');
+  if(addUserForm) addUserForm.addEventListener('submit', handleAddUser);
+  document.querySelectorAll('[data-remove-user]').forEach(el=>{
+    el.addEventListener('click', ()=> handleRemoveUser(el.getAttribute('data-remove-user')));
+  });
+
+  const openAdd = document.querySelector('[data-open-add]');
+  if(openAdd) openAdd.addEventListener('click', ()=>{ State.pendingPhoto=''; State.showAddModal = true; render(); });
+
+  document.querySelectorAll('[data-close-add]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ if(e.target === el){ State.showAddModal = false; render(); } });
+  });
+  document.querySelectorAll('[data-close-detail]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ if(e.target === el){ State.editingItemId = null; render(); } });
+  });
+  document.querySelectorAll('[data-stop]').forEach(el=>{
+    el.addEventListener('click', (e)=> e.stopPropagation());
+  });
+
+  const addForm = document.getElementById('add-item-form');
+  if(addForm) addForm.addEventListener('submit', handleAddItemSubmit);
+  const addPhotoInput = document.getElementById('add-photo-input');
+  if(addPhotoInput) addPhotoInput.addEventListener('change', (e)=> handlePhotoSelect(e.target, 'add'));
+
+  const searchInput = document.getElementById('search-input');
+  if(searchInput){
+    searchInput.addEventListener('input', (e)=>{
+      State.search = e.target.value;
+      const focusVal = e.target.value;
+      render();
+      const el = document.getElementById('search-input');
+      if(el){ el.focus(); el.value = focusVal; el.setSelectionRange(focusVal.length, focusVal.length); }
+    });
+  }
+  const lowToggle = document.getElementById('low-toggle');
+  if(lowToggle) lowToggle.addEventListener('change', (e)=>{ State.lowOnly = e.target.checked; render(); });
+
+  document.querySelectorAll('[data-open-item]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      if(e.target.closest('[data-stock-minus],[data-stock-plus]')) return;
+      State.editingItemId = el.getAttribute('data-open-item');
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-stock-plus]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const id = el.getAttribute('data-stock-plus');
+      const amtEl = document.getElementById('detail-adjust-amt');
+      const amt = (State.editingItemId === id && amtEl) ? (parseInt(amtEl.value,10) || 1) : 1;
+      adjustStock(id, amt);
+    });
+  });
+  document.querySelectorAll('[data-stock-minus]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const id = el.getAttribute('data-stock-minus');
+      const amtEl = document.getElementById('detail-adjust-amt');
+      const amt = (State.editingItemId === id && amtEl) ? (parseInt(amtEl.value,10) || 1) : 1;
+      adjustStock(id, -amt);
+    });
+  });
+  document.querySelectorAll('[data-delete-item]').forEach(el=>{
+    el.addEventListener('click', ()=> deleteItem(el.getAttribute('data-delete-item')));
+  });
+  const reportSearch=document.getElementById("reportSearch");
+
+if(reportSearch){
+
+reportSearch.addEventListener("keyup",function(){
+
+let value=this.value.toLowerCase();
+
+document.querySelectorAll("#reportBody tr").forEach(row=>{
+
+row.style.display=row.innerText.toLowerCase().includes(value)
+?"":"none";
+
+});
+
+});
+
+}
+const csvBtn=document.getElementById("exportCSV");
+
+if(csvBtn){
+
+csvBtn.addEventListener("click",()=>{
+
+let csv="Date,Employee,Action,Garment,Quantity\n";
+
+State.activityLog.forEach(r=>{
+
+csv+=`"${fmtTime(r.timestamp)}","${r.user}","${r.type}","${r.itemName}","${r.qty}"\n`;
+
+});
+
+const blob=new Blob([csv],{type:"text/csv"});
+
+const url=URL.createObjectURL(blob);
+
+const a=document.createElement("a");
+
+a.href=url;
+
+a.download="Factory_Report.csv";
+
+a.click();
+
+URL.revokeObjectURL(url);
+
+});
+
+}
+const pdfBtn=document.getElementById("exportPDF");
+
+if(pdfBtn){
+
+pdfBtn.addEventListener("click",()=>{
+
+const {jsPDF}=window.jspdf;
+
+const doc=new jsPDF();
+
+doc.setFontSize(18);
+
+doc.text("Ace Garment Nepal",20,20);
+
+doc.setFontSize(12);
+
+let y=35;
+
+State.activityLog.forEach(r=>{
+
+doc.text(
+
+`${fmtTime(r.timestamp)} | ${r.user} | ${r.type} | ${r.itemName} | ${r.qty}`,
+
+20,
+
+y
+
+);
+
+y+=8;
+
+if(y>280){
+
+doc.addPage();
+
+y=20;
+
+}
+
+});
+
+doc.save("Factory_Report.pdf");
+
+});
+
+}
+document.querySelectorAll("[data-delete-report]").forEach(btn=>{
+
+btn.addEventListener("click",()=>{
+
+deleteReport(
+Number(btn.dataset.deleteReport)
+);
+
+});
+
+});
+}
+
+loadAll();
+</script>
+</body>
+</html>
